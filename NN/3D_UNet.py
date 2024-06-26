@@ -147,35 +147,31 @@ device = (
 #device = ("cpu")
 print(f"Using {device} device")
 
-# data = sio.loadmat('../SimData/3D/images.mat')
-data = mat73.loadmat('../SimData/3D/images3.mat')
+# Choose the training data here
+data = mat73.loadmat('../SphericalInclusion/images3.mat')
+# data = mat73.loadmat('../CylindricalInclusion/images_reactor_cyl_H15.mat')
 training_X = torch.tensor(data['noisy_img'][:,:,:,:2048], dtype=torch.float32)
 training_Y = torch.tensor(data['clean_img'][:,:,:,:2048], dtype=torch.float32)
 validation_X = torch.tensor(data['noisy_img'][:,:,:,2048:2400], dtype=torch.float32)
 validation_Y = torch.tensor(data['clean_img'][:,:,:,2048:2400], dtype=torch.float32)
-# inmesh = np.int16(data['inmesh'].squeeze())
+
 mask = torch.tensor(data['mask'], dtype=torch.float32).to(device)
 
 model = UNet().to(device)
 loss_fn = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+# optimizer = torch.optim.Adam(model.parameters(), lr=5e-4) # cylindrical inclusions
 train_dataloader = DataLoader(mydata(training_X, training_Y, device), batch_size=16)
 validate_dataloader = DataLoader(mydata(validation_X, validation_Y, device), batch_size=1)
 
 all_loss = []
 all_testloss = []
-mintest = np.inf
 for epoch in range(200):
     print(f'Epoch {epoch:>2d}')
     trainloss, testloss = train_loop(train_dataloader, validate_dataloader, model, mask, optimizer)
     all_loss.append(trainloss)
     all_testloss.append(testloss)
-    if testloss < mintest:
-        mintest = testloss
-    # if epoch>5:
-    #     if np.all(np.array(all_testloss[-5:])>mintest):
-    #         print('Test loss exceeds minimum for 5 consecutive epochs. Terminating.')
-    #         break
+
     if epoch>5:
         if np.all(np.diff(all_testloss)[-5:] >= 0):
             print('Test loss hasnt decreased for 5 consecutive epochs. Terminating.')

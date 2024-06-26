@@ -1,6 +1,5 @@
 load('test_processed.mat')
-% load('../SimData/3D/images3.mat')
-load('../SimulateData/images3.mat')
+load('../SphericalInclusion/images3.mat')
 load('bnd.mat')
 
 recon1 = noisy_img(:,:,:,2401:end);
